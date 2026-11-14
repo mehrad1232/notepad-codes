@@ -7,7 +7,7 @@ on:
       - "NOVA-Web-Engine/.github/workflows/ios-build.yml"
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: macos-15
     defaults:
       run:
         working-directory: NOVA-Web-Engine/ios
