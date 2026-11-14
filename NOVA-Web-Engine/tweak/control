@@ -1,0 +1,9 @@
+Package: ai.nova.launch
+Name: NOVA Launcher Integration
+Version: 0.1.0
+Architecture: iphoneos-arm
+Description: Optional SpringBoard URL launcher integration for NOVA Browser.
+Maintainer: NOVA Project
+Author: NOVA Project
+Section: Tweaks
+Depends: mobilesubstrate, firmware (>= 12.0)
