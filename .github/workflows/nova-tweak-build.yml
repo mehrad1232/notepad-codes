@@ -1,0 +1,25 @@
+name: NOVA Jailbreak Tweak Build
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "NOVA-Web-Engine/tweak/**"
+      - ".github/workflows/nova-tweak-build.yml"
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Theos package
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE/NOVA-Web-Engine/tweak:/project" \
+            -w /project \
+            ghcr.io/theos/theos:latest \
+            make package
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-Jailbreak-Tweak
+          path: NOVA-Web-Engine/tweak/packages/*.deb
+          if-no-files-found: error
