@@ -1,0 +1,25 @@
+name: NOVA
+options:
+  bundleIdPrefix: ai.nova
+  deploymentTarget:
+    iOS: "12.0"
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    IPHONEOS_DEPLOYMENT_TARGET: 12.0
+    TARGETED_DEVICE_FAMILY: "1"
+    PRODUCT_BUNDLE_IDENTIFIER: ai.nova.browser
+    INFOPLIST_KEY_CFBundleDisplayName: NOVA Browser
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    CODE_SIGNING_ALLOWED: NO
+targets:
+  NOVA:
+    type: application
+    platform: iOS
+    sources:
+      - path: NOVA
+    settings:
+      base:
+        PRODUCT_NAME: NOVA
+        INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsArbitraryLoads: YES
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
