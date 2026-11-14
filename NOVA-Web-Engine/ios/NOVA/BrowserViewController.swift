@@ -9,7 +9,12 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
     private let back = UIButton(type: .system)
     private let forward = UIButton(type: .system)
     private let reload = UIButton(type: .system)
-    private let cloud = UIButton(type: .system)
+    private let bookmarks = UIButton(type: .system)
+    private let history = UIButton(type: .system)
+    private let accent = UIColor(red: 0.1, green: 0.9, blue: 0.85, alpha: 1)
+    private let storage = UserDefaults.standard
+    private let bookmarksKey = "nova.bookmarks"
+    private let historyKey = "nova.history"
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,7 +33,7 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
         address.borderStyle = .roundedRect
         address.backgroundColor = UIColor(red: 0.08, green: 0.12, blue: 0.17, alpha: 1)
         address.textColor = .white
-        address.tintColor = UIColor(red: 0.1, green: 0.9, blue: 0.85, alpha: 1)
+        address.tintColor = accent
         address.autocapitalizationType = .none
         address.autocorrectionType = .no
         address.keyboardType = .URL
@@ -40,18 +45,20 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
         controls.translatesAutoresizingMaskIntoConstraints = false
         controls.axis = .horizontal
         controls.distribution = .fillEqually
-        controls.spacing = 8
-        for (button, title) in [(back, "‹"), (forward, "›"), (reload, "↻"), (cloud, "CLOUD")] {
+        controls.spacing = 5
+        let items: [(UIButton, String)] = [(back, "‹"), (forward, "›"), (reload, "↻"), (bookmarks, "★"), (history, "◷")]
+        for (button, title) in items {
             button.setTitle(title, for: .normal)
-            button.setTitleColor(UIColor(red: 0.1, green: 0.9, blue: 0.85, alpha: 1), for: .normal)
-            button.titleLabel?.font = .boldSystemFont(ofSize: title == "CLOUD" ? 11 : 25)
+            button.setTitleColor(accent, for: .normal)
+            button.titleLabel?.font = .boldSystemFont(ofSize: 23)
             controls.addArrangedSubview(button)
         }
         bar.addSubview(controls)
+
         status.translatesAutoresizingMaskIntoConstraints = false
-        status.textColor = UIColor(red: 0.2, green: 0.85, blue: 0.8, alpha: 1)
+        status.textColor = accent
         status.font = .systemFont(ofSize: 10, weight: .medium)
-        status.text = "NOVA • LOCAL WEBKIT"
+        status.text = "NOVA • ON-DEVICE"
         bar.addSubview(status)
 
         NSLayoutConstraint.activate([
@@ -63,13 +70,14 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
             address.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 10),
             address.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -10),
             address.heightAnchor.constraint(equalToConstant: 34),
-            controls.topAnchor.constraint(equalTo: address.bottomAnchor, constant: 5),
-            controls.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 10),
-            controls.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -10),
+            controls.topAnchor.constraint(equalTo: address.bottomAnchor, constant: 4),
+            controls.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 8),
+            controls.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -8),
             controls.heightAnchor.constraint(equalToConstant: 30),
             status.topAnchor.constraint(equalTo: controls.bottomAnchor, constant: 2),
             status.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12)
         ])
+
         web.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(web)
         NSLayoutConstraint.activate([
@@ -81,7 +89,8 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
         back.addTarget(self, action: #selector(goBack), for: .touchUpInside)
         forward.addTarget(self, action: #selector(goForward), for: .touchUpInside)
         reload.addTarget(self, action: #selector(reloadPage), for: .touchUpInside)
-        cloud.addTarget(self, action: #selector(openCloud), for: .touchUpInside)
+        bookmarks.addTarget(self, action: #selector(showBookmarks), for: .touchUpInside)
+        history.addTarget(self, action: #selector(showHistory), for: .touchUpInside)
     }
 
     private func configureWeb() {
@@ -95,33 +104,87 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
     private func normalizedURL(_ raw: String) -> URL? {
         let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return nil }
-        let candidate = value.contains("://") ? value : "https://" + value
-        return URL(string: candidate)
+        return URL(string: value.contains("://") ? value : "https://" + value)
     }
 
     private func loadAddress() {
-        guard let url = normalizedURL(address.text ?? "") else { return }
+        guard let url = normalizedURL(address.text ?? "") else {
+            status.text = "NOVA • INVALID ADDRESS"
+            return
+        }
         address.resignFirstResponder()
         status.text = "NOVA • LOADING"
         web.load(URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 45))
     }
 
+    private func saveCurrentPage() {
+        guard let url = web.url?.absoluteString else { return }
+        var items = storage.stringArray(forKey: bookmarksKey) ?? []
+        if !items.contains(url) { items.insert(url, at: 0) }
+        storage.set(Array(items.prefix(100)), forKey: bookmarksKey)
+        status.text = "NOVA • BOOKMARK SAVED"
+    }
+
+    private func openSavedList(title: String, key: String, source: UIButton) {
+        let items = storage.stringArray(forKey: key) ?? []
+        let alert = UIAlertController(title: title, message: items.isEmpty ? "No saved pages yet." : nil, preferredStyle: .actionSheet)
+        for item in items.prefix(12) {
+            let label = item.replacingOccurrences(of: "https://", with: "").replacingOccurrences(of: "http://", with: "")
+            alert.addAction(UIAlertAction(title: String(label.prefix(55)), style: .default) { _ in
+                self.address.text = item
+                self.loadAddress()
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Close", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = source
+            popover.sourceRect = source.bounds
+        }
+        present(alert, animated: true)
+    }
+
     @objc private func goBack() { if web.canGoBack { web.goBack() } }
     @objc private func goForward() { if web.canGoForward { web.goForward() } }
     @objc private func reloadPage() { web.reload() }
-    @objc private func openCloud() {
-        let controller = CloudViewController()
-        controller.modalPresentationStyle = .fullScreen
-        present(controller, animated: true)
+
+    @objc private func showBookmarks() {
+        let alert = UIAlertController(title: "NOVA Bookmarks", message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Save Current Page", style: .default) { _ in self.saveCurrentPage() })
+        alert.addAction(UIAlertAction(title: "Open Saved Pages", style: .default) { _ in
+            self.openSavedList(title: "Bookmarks", key: self.bookmarksKey, source: self.bookmarks)
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = bookmarks
+            popover.sourceRect = bookmarks.bounds
+        }
+        present(alert, animated: true)
     }
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool { loadAddress(); return true }
+
+    @objc private func showHistory() {
+        openSavedList(title: "Recent History", key: historyKey, source: history)
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        loadAddress()
+        return true
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         address.text = webView.url?.absoluteString
-        status.text = "NOVA • LOCAL WEBKIT"
+        status.text = "NOVA • ON-DEVICE WEBKIT"
+        if let url = webView.url?.absoluteString {
+            var items = storage.stringArray(forKey: historyKey) ?? []
+            items.removeAll { $0 == url }
+            items.insert(url, at: 0)
+            storage.set(Array(items.prefix(100)), forKey: historyKey)
+        }
     }
+
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         status.text = "NOVA • LOAD ERROR"
     }
+
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         status.text = "NOVA • LOAD ERROR"
     }
