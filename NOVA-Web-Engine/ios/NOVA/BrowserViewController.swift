@@ -10,9 +10,6 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
     private let forward = UIButton(type: .system)
     private let reload = UIButton(type: .system)
     private let cloud = UIButton(type: .system)
-    private let bottom = UIView()
-    private var cloudController: CloudViewController?
-    private let defaults = UserDefaults.standard
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -57,20 +54,29 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
         status.text = "NOVA • LOCAL WEBKIT"
         bar.addSubview(status)
 
-        bottom.translatesAutoresizingMaskIntoConstraints = false
-        bottom.backgroundColor = bar.backgroundColor
-        view.addSubview(bottom)
         NSLayoutConstraint.activate([
-            bar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor), bar.leadingAnchor.constraint(equalTo: view.leadingAnchor), bar.trailingAnchor.constraint(equalTo: view.trailingAnchor), bar.heightAnchor.constraint(equalToConstant: 104),
-            address.topAnchor.constraint(equalTo: bar.topAnchor, constant: 8), address.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 10), address.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -10), address.heightAnchor.constraint(equalToConstant: 34),
-            controls.topAnchor.constraint(equalTo: address.bottomAnchor, constant: 5), controls.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 10), controls.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -10), controls.heightAnchor.constraint(equalToConstant: 30),
-            status.topAnchor.constraint(equalTo: controls.bottomAnchor, constant: 2), status.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12),
-            bottom.leadingAnchor.constraint(equalTo: view.leadingAnchor), bottom.trailingAnchor.constraint(equalTo: view.trailingAnchor), bottom.bottomAnchor.constraint(equalTo: view.bottomAnchor), bottom.heightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0).constraintWithConstant(0)
+            bar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bar.heightAnchor.constraint(equalToConstant: 104),
+            address.topAnchor.constraint(equalTo: bar.topAnchor, constant: 8),
+            address.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 10),
+            address.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -10),
+            address.heightAnchor.constraint(equalToConstant: 34),
+            controls.topAnchor.constraint(equalTo: address.bottomAnchor, constant: 5),
+            controls.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 10),
+            controls.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -10),
+            controls.heightAnchor.constraint(equalToConstant: 30),
+            status.topAnchor.constraint(equalTo: controls.bottomAnchor, constant: 2),
+            status.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12)
         ])
         web.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(web)
         NSLayoutConstraint.activate([
-            web.topAnchor.constraint(equalTo: bar.bottomAnchor), web.leadingAnchor.constraint(equalTo: view.leadingAnchor), web.trailingAnchor.constraint(equalTo: view.trailingAnchor), web.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            web.topAnchor.constraint(equalTo: bar.bottomAnchor),
+            web.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            web.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            web.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
         back.addTarget(self, action: #selector(goBack), for: .touchUpInside)
         forward.addTarget(self, action: #selector(goForward), for: .touchUpInside)
@@ -119,8 +125,4 @@ final class BrowserViewController: UIViewController, UITextFieldDelegate, WKNavi
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         status.text = "NOVA • LOAD ERROR"
     }
-}
-
-private extension NSLayoutConstraint {
-    func constraintWithConstant(_ value: CGFloat) -> NSLayoutConstraint { constant = value; return self }
 }
