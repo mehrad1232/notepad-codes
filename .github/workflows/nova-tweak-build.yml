@@ -7,16 +7,14 @@ on:
       - ".github/workflows/nova-tweak-build.yml"
 jobs:
   package:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Build Theos package
-        run: |
-          docker run --rm \
-            -v "$GITHUB_WORKSPACE/NOVA-Web-Engine/tweak:/project" \
-            -w /project \
-            ghcr.io/theos/theos:latest \
-            make package
+      - name: Install Theos and iOS SDK
+        uses: Randomblock1/theos-action@v1
+      - name: Build rootful iOS 12 arm64 package
+        working-directory: NOVA-Web-Engine/tweak
+        run: make clean package FINALPACKAGE=1
       - name: Upload Debian package
         uses: actions/upload-artifact@v4
         with:
