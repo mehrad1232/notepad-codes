@@ -1,0 +1,33 @@
+name: NOVA iOS Build
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "NOVA-Web-Engine/ios/**"
+      - ".github/workflows/nova-ios-build.yml"
+jobs:
+  build:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: NOVA-Web-Engine/ios
+        run: xcodegen generate
+      - name: Build unsigned iOS 12 arm64 app
+        working-directory: NOVA-Web-Engine/ios
+        run: xcodebuild -project NOVA.xcodeproj -scheme NOVA -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=12.0 ARCHS=arm64
+      - name: Package unsigned IPA
+        working-directory: NOVA-Web-Engine/ios
+        run: |
+          APP="build/Build/Products/Release-iphoneos/NOVA.app"
+          test -d "$APP"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          /usr/bin/zip -qry NOVA-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-unsigned-IPA
+          path: NOVA-Web-Engine/ios/NOVA-unsigned.ipa
+          if-no-files-found: error
